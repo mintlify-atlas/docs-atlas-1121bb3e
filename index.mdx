@@ -1,97 +1,78 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "Inquirer.js"
+description: "A collection of common interactive command line user interfaces for Node.js — beautiful prompts with zero configuration."
 ---
 
-## Setting up
+Inquirer.js gives you a set of interactive CLI prompts to collect user input in your Node.js applications. Install one package, import the prompt you need, and `await` the answer.
 
-Get your documentation site up and running in minutes.
+```bash
+npm install @inquirer/prompts
+```
 
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
+```js
+import { input, select, confirm } from '@inquirer/prompts';
 
-## Make it yours
+const name = await input({ message: 'What is your name?' });
+const proceed = await confirm({ message: 'Continue?' });
+```
 
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Get a working interactive prompt in under 2 minutes.
   </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
+  <Card title="Introduction" icon="book-open" href="/introduction">
+    Learn about Inquirer.js, its packages, and architecture.
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+  <Card title="Built-in Prompts" icon="list" href="/prompts/input">
+    Explore all 10 prompt types with full option reference.
   </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
+  <Card title="Custom Prompts" icon="code" href="/core/overview">
+    Build your own prompts using the React-hooks-inspired core API.
   </Card>
-</Columns>
+</CardGroup>
 
-## Create beautiful pages
+## Prompt types
 
-Everything you need to create world-class documentation.
+<CardGroup cols={2}>
+  <Card title="Input" icon="keyboard" href="/prompts/input">
+    Free text entry with validation, transformation, and default values.
+  </Card>
+  <Card title="Select" icon="circle-dot" href="/prompts/select">
+    Single-choice list with keyboard navigation and search.
+  </Card>
+  <Card title="Checkbox" icon="square-check" href="/prompts/checkbox">
+    Multi-select list with toggle, select-all, and invert shortcuts.
+  </Card>
+  <Card title="Confirm" icon="circle-question" href="/prompts/confirm">
+    Yes/no boolean prompt with configurable default.
+  </Card>
+  <Card title="Search" icon="magnifying-glass" href="/prompts/search">
+    Async searchable list — great for large or remote datasets.
+  </Card>
+  <Card title="Password" icon="lock" href="/prompts/password">
+    Masked input for secrets and sensitive values.
+  </Card>
+  <Card title="Number" icon="hashtag" href="/prompts/number">
+    Numeric input with min, max, and step validation.
+  </Card>
+  <Card title="Editor" icon="file-pen" href="/prompts/editor">
+    Launch the user's preferred editor for multi-line input.
+  </Card>
+</CardGroup>
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+## Key features
 
-## Need inspiration?
-
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+<CardGroup cols={2}>
+  <Card title="Theming" icon="palette" href="/guides/theming">
+    Customize colors, icons, prefix, and spinner per prompt.
+  </Card>
+  <Card title="Internationalization" icon="earth-americas" href="/guides/internationalization">
+    Drop-in i18n support with 5 built-in locales and custom locale API.
+  </Card>
+  <Card title="Testing utilities" icon="flask" href="/testing/unit-testing">
+    First-class unit and E2E testing with `render()` and `screen`.
+  </Card>
+  <Card title="Recipes" icon="book-bookmark" href="/guides/recipes">
+    Common patterns: cancellation, conditional questions, timeouts, and more.
+  </Card>
+</CardGroup>

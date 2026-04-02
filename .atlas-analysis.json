@@ -1,0 +1,104 @@
+{
+  "projectType": "sdk-library",
+  "projectName": "Inquirer.js",
+  "projectDescription": "A collection of common interactive command line prompt components for Node.js, with a React-hooks-inspired API for building custom prompts.",
+  "theme": "luma",
+  "primaryColor": "#242b2c",
+  "lightColor": "#6a6a6d",
+  "darkColor": "#ebeaea",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": ["introduction", "quickstart"]
+          },
+          {
+            "group": "Built-in Prompts",
+            "pages": [
+              "prompts/input",
+              "prompts/select",
+              "prompts/checkbox",
+              "prompts/confirm",
+              "prompts/search",
+              "prompts/password",
+              "prompts/number",
+              "prompts/editor",
+              "prompts/expand",
+              "prompts/rawlist"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/advanced-usage",
+              "guides/theming",
+              "guides/internationalization",
+              "guides/recipes"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Custom Prompts",
+        "groups": [
+          {
+            "group": "Core API",
+            "pages": [
+              "core/overview",
+              "core/hooks",
+              "core/key-utilities"
+            ]
+          },
+          {
+            "group": "Testing",
+            "pages": [
+              "testing/unit-testing",
+              "testing/e2e-testing"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "10 built-in interactive prompt types (input, select, checkbox, confirm, search, password, number, editor, expand, rawlist)",
+    "React-hooks-inspired API via @inquirer/core for building custom prompts",
+    "Full TypeScript support with generic types",
+    "Internationalization support with built-in English, French, Spanish, Chinese, and Portuguese locales",
+    "Async validation, theming, and AbortSignal-based cancellation",
+    "Unit and E2E testing utilities via @inquirer/testing",
+    "ESM-first with Node.js >= 18 support"
+  ],
+  "publicApiSurface": [
+    "input(config, context?)",
+    "select(config, context?)",
+    "checkbox(config, context?)",
+    "confirm(config, context?)",
+    "search(config, context?)",
+    "password(config, context?)",
+    "number(config, context?)",
+    "editor(config, context?)",
+    "expand(config, context?)",
+    "rawlist(config, context?)",
+    "Separator",
+    "createPrompt(renderFn)",
+    "useState(initialValue)",
+    "useKeypress(handler)",
+    "useEffect(fn, deps)",
+    "useMemo(fn, deps)",
+    "useRef(initialValue)",
+    "usePrefix(options)",
+    "usePagination(options)",
+    "makeTheme(theme)",
+    "isEnterKey(key)",
+    "isUpKey(key)",
+    "isDownKey(key)",
+    "isSpaceKey(key)",
+    "isBackspaceKey(key)",
+    "render(prompt, config)",
+    "screen"
+  ]
+}

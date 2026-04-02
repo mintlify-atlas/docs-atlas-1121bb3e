@@ -1,0 +1,100 @@
+---
+title: "Number"
+description: "A numeric input prompt with optional min, max, and step constraints."
+---
+
+## Installation
+
+<CodeGroup>
+
+```sh npm
+npm install @inquirer/prompts
+```
+
+```sh yarn
+yarn add @inquirer/prompts
+```
+
+</CodeGroup>
+
+To install the standalone package instead:
+
+<CodeGroup>
+
+```sh npm
+npm install @inquirer/number
+```
+
+```sh yarn
+yarn add @inquirer/number
+```
+
+</CodeGroup>
+
+## Usage
+
+```js
+import { number } from '@inquirer/prompts';
+// Or
+// import number from '@inquirer/number';
+
+const answer = await number({ message: 'Enter your age' });
+```
+
+## Options
+
+<ParamField path="message" type="string" required>
+  The question to ask the user.
+</ParamField>
+
+<ParamField path="default" type="number">
+  Default value used when the user submits without typing anything. Press `Backspace` to clear it.
+</ParamField>
+
+<ParamField path="min" type="number">
+  The minimum accepted value. Submissions below this threshold fail validation.
+</ParamField>
+
+<ParamField path="max" type="number">
+  The maximum accepted value. Submissions above this threshold fail validation.
+</ParamField>
+
+<ParamField path="step" type="number | 'any'">
+  The granularity that the value must conform to. Values must be equal to `min + n * step` for some integer `n`. Defaults to `1`, meaning only integers are accepted by default. Set to `'any'` to allow any decimal value.
+</ParamField>
+
+<ParamField path="required" type="boolean">
+  Defaults to `false`. When `true`, an empty submission is not accepted.
+</ParamField>
+
+<ParamField path="validate" type="(value: number | undefined) => boolean | string | Promise<boolean | string>">
+  Called on submit. Return `true` to accept. Return a string to show it as an error message. Throwing a rejected promise is treated as a code error and will crash.
+</ParamField>
+
+<ParamField path="theme" type="Theme">
+  Customize the look of the prompt. See [Theming](#theming).
+</ParamField>
+
+<Tip>
+  Use `step: 'any'` together with `min` and `max` to accept floating-point numbers within a specific range.
+</Tip>
+
+## Theming
+
+Pass a partial `theme` object to override specific tokens. Unspecified keys fall back to the defaults.
+
+```ts
+type Theme = {
+  prefix: string | { idle: string; done: string };
+  spinner: {
+    interval: number;
+    frames: string[];
+  };
+  style: {
+    answer: (text: string) => string;
+    message: (text: string, status: 'idle' | 'done' | 'loading') => string;
+    error: (text: string) => string;
+    defaultAnswer: (text: string) => string;
+  };
+};
+```

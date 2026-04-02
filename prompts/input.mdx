@@ -1,0 +1,108 @@
+---
+title: "Input"
+description: "A free-text entry prompt that supports validation, transformation, default values, and pattern matching."
+---
+
+## Installation
+
+<CodeGroup>
+
+```sh npm
+npm install @inquirer/prompts
+```
+
+```sh yarn
+yarn add @inquirer/prompts
+```
+
+</CodeGroup>
+
+To install the standalone package instead:
+
+<CodeGroup>
+
+```sh npm
+npm install @inquirer/input
+```
+
+```sh yarn
+yarn add @inquirer/input
+```
+
+</CodeGroup>
+
+## Usage
+
+```js
+import { input } from '@inquirer/prompts';
+// Or
+// import input from '@inquirer/input';
+
+const answer = await input({ message: 'Enter your name' });
+```
+
+## Options
+
+<ParamField path="message" type="string" required>
+  The question to ask the user.
+</ParamField>
+
+<ParamField path="default" type="string">
+  Default value used when the user submits without typing anything. See `prefill` to control how it behaves.
+</ParamField>
+
+<ParamField path="prefill" type="'tab' | 'editable'">
+  Controls how the default value is presented. Defaults to `'tab'`.
+
+  - `'tab'` — pressing `Backspace` clears the default; pressing `Tab` inlines it for editing.
+  - `'editable'` — the default value is pre-filled immediately so the user can edit it straight away.
+</ParamField>
+
+<ParamField path="required" type="boolean">
+  Defaults to `false`. When `true`, an empty submission is not accepted.
+</ParamField>
+
+<ParamField path="transformer" type="(value: string, { isFinal: boolean }) => string">
+  Transform or format the raw value for display. `isFinal` is `true` once the prompt is done. This is purely visual — modify the answer in your own code if you need to change the returned value.
+</ParamField>
+
+<ParamField path="validate" type="(value: string) => boolean | string | Promise<boolean | string>">
+  Called on submit. Return `true` (or a resolved `true`) to accept the answer. Return a string to show it as an error message. Throwing a rejected promise is treated as a code error and will crash.
+</ParamField>
+
+<ParamField path="pattern" type="RegExp">
+  A regular expression the input must match. If it does not match, validation fails using the message from `patternError`.
+</ParamField>
+
+<ParamField path="patternError" type="string">
+  The error message shown when the input does not match `pattern`. Defaults to `'Invalid input'`.
+</ParamField>
+
+<ParamField path="theme" type="Theme">
+  Customize the look of the prompt. See [Theming](#theming).
+</ParamField>
+
+## Theming
+
+Pass a partial `theme` object to override specific tokens. Unspecified keys fall back to the defaults.
+
+```ts
+type Theme = {
+  prefix: string | { idle: string; done: string };
+  spinner: {
+    interval: number;
+    frames: string[];
+  };
+  style: {
+    answer: (text: string) => string;
+    message: (text: string, status: 'idle' | 'done' | 'loading') => string;
+    error: (text: string) => string;
+    defaultAnswer: (text: string) => string;
+  };
+  validationFailureMode: 'keep' | 'clear';
+};
+```
+
+<Note>
+  `validationFailureMode` controls what happens when the submitted value fails validation. The default `'keep'` leaves the value in the input so the user can correct it. Set it to `'clear'` to reset the field to an empty string instead.
+</Note>

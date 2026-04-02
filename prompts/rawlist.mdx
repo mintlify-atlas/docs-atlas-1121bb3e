@@ -1,0 +1,130 @@
+---
+title: "Raw List"
+description: "A numbered single-select prompt where users type a number to choose an option, with minimal keyboard interaction."
+---
+
+## Installation
+
+<CodeGroup>
+
+```sh npm
+npm install @inquirer/prompts
+```
+
+```sh yarn
+yarn add @inquirer/prompts
+```
+
+</CodeGroup>
+
+To install the standalone package instead:
+
+<CodeGroup>
+
+```sh npm
+npm install @inquirer/rawlist
+```
+
+```sh yarn
+yarn add @inquirer/rawlist
+```
+
+</CodeGroup>
+
+## Usage
+
+```js
+import { rawlist } from '@inquirer/prompts';
+// Or
+// import rawlist from '@inquirer/rawlist';
+
+const answer = await rawlist({
+  message: 'Select a package manager',
+  choices: [
+    { name: 'npm', value: 'npm' },
+    { name: 'yarn', value: 'yarn' },
+    { name: 'pnpm', value: 'pnpm' },
+  ],
+});
+```
+
+Each choice is displayed with a number (or a custom `key`). The user types the number and presses Enter to confirm.
+
+## Options
+
+<ParamField path="message" type="string" required>
+  The question to ask the user.
+</ParamField>
+
+<ParamField path="choices" type="Array<Choice | Separator>" required>
+  The list of available choices. Can also be an array of plain strings, in which case the string is used as both the `value` and the `name`. See [Choice object](#choice-object) below.
+</ParamField>
+
+<ParamField path="default" type="Value">
+  The `value` of the choice to pre-select. If no match is found, no choice is pre-selected.
+</ParamField>
+
+<ParamField path="loop" type="boolean">
+  Defaults to `true`. When `false`, the cursor stops at the top and bottom of the list instead of wrapping around.
+</ParamField>
+
+<ParamField path="theme" type="Theme">
+  Customize the look of the prompt. See [Theming](#theming).
+</ParamField>
+
+## Choice object
+
+```ts
+type Choice<Value> = {
+  value: Value;
+  name?: string;
+  short?: string;
+  key?: string;
+  description?: string;
+};
+```
+
+<ResponseField name="value" type="Value" required>
+  The value returned by `await rawlist()` when this choice is selected.
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  The label displayed in the list.
+</ResponseField>
+
+<ResponseField name="short" type="string">
+  The label rendered next to the question after the prompt is submitted. Defaults to `name`.
+</ResponseField>
+
+<ResponseField name="key" type="string">
+  A custom key shown as `key) name`. When omitted, the choice is numbered automatically (1, 2, 3, …).
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  An optional description shown below the list when this choice is highlighted.
+</ResponseField>
+
+`choices` can also be an array of strings — the string is used as both the `value` and the `name`.
+
+`Separator` objects can be included in `choices` to render non-selectable dividers between groups.
+
+## Theming
+
+Pass a partial `theme` object to override specific tokens. Unspecified keys fall back to the defaults.
+
+```ts
+type Theme = {
+  prefix: string | { idle: string; done: string };
+  spinner: {
+    interval: number;
+    frames: string[];
+  };
+  style: {
+    answer: (text: string) => string;
+    message: (text: string, status: 'idle' | 'done' | 'loading') => string;
+    error: (text: string) => string;
+    highlight: (text: string) => string;
+    description: (text: string) => string;
+  };
+};
+```

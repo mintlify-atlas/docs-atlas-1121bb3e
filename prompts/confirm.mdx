@@ -1,0 +1,81 @@
+---
+title: "Confirm"
+description: "A yes/no prompt that returns a boolean value."
+---
+
+## Installation
+
+<CodeGroup>
+
+```sh npm
+npm install @inquirer/prompts
+```
+
+```sh yarn
+yarn add @inquirer/prompts
+```
+
+</CodeGroup>
+
+To install the standalone package instead:
+
+<CodeGroup>
+
+```sh npm
+npm install @inquirer/confirm
+```
+
+```sh yarn
+yarn add @inquirer/confirm
+```
+
+</CodeGroup>
+
+## Usage
+
+```js
+import { confirm } from '@inquirer/prompts';
+// Or
+// import confirm from '@inquirer/confirm';
+
+const answer = await confirm({ message: 'Continue?' });
+```
+
+The prompt accepts `y`, `yes`, `n`, or `no` as input (case-insensitive). Pressing `Tab` toggles between `Yes` and `No`. If the user submits without typing anything, the `default` value is used (defaults to `true`).
+
+## Options
+
+<ParamField path="message" type="string" required>
+  The question to ask the user.
+</ParamField>
+
+<ParamField path="default" type="boolean">
+  The answer used when the user submits without typing anything. Defaults to `true`. The prompt displays `Y/n` when `true` and `y/N` when `false`.
+</ParamField>
+
+<ParamField path="transformer" type="(value: boolean) => string">
+  Transform the boolean answer into a custom display string. By default `true` renders as `Yes` and `false` renders as `No`.
+</ParamField>
+
+<ParamField path="theme" type="Theme">
+  Customize the look of the prompt. See [Theming](#theming).
+</ParamField>
+
+## Theming
+
+Pass a partial `theme` object to override specific tokens. Unspecified keys fall back to the defaults.
+
+```ts
+type Theme = {
+  prefix: string | { idle: string; done: string };
+  spinner: {
+    interval: number;
+    frames: string[];
+  };
+  style: {
+    answer: (text: string) => string;
+    message: (text: string, status: 'idle' | 'done' | 'loading') => string;
+    defaultAnswer: (text: string) => string;
+  };
+};
+```

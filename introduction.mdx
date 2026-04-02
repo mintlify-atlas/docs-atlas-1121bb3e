@@ -1,0 +1,103 @@
+---
+title: "Introduction"
+description: "What Inquirer.js is, how the packages fit together, and when to use it."
+---
+
+Inquirer.js is a collection of interactive CLI prompt components for Node.js. It gives your command-line programs a polished user interface for collecting input — text entries, single-choice lists, multi-select checkboxes, confirmations, password fields, and more — using a simple `await`-based API.
+
+## Packages
+
+Inquirer.js is published as a set of focused packages under the `@inquirer` scope. You can install only what you need.
+
+### `@inquirer/prompts`
+
+The main entry point. It re-exports every built-in prompt from a single package so you don't need to manage individual prompt dependencies.
+
+```bash
+npm install @inquirer/prompts
+```
+
+```js
+import { input, select, confirm, checkbox, password } from '@inquirer/prompts';
+```
+
+`@inquirer/prompts` exports the following prompts:
+
+| Export | Package |
+| --- | --- |
+| `input` | `@inquirer/input` |
+| `select` | `@inquirer/select` |
+| `checkbox`, `Separator` | `@inquirer/checkbox` |
+| `confirm` | `@inquirer/confirm` |
+| `search` | `@inquirer/search` |
+| `password` | `@inquirer/password` |
+| `expand` | `@inquirer/expand` |
+| `editor` | `@inquirer/editor` |
+| `number` | `@inquirer/number` |
+| `rawlist` | `@inquirer/rawlist` |
+
+### Individual prompt packages
+
+Each prompt is also published as a standalone package. Install only what you use to keep your dependency tree lean.
+
+```bash
+npm install @inquirer/input
+npm install @inquirer/select
+```
+
+The package name matches the export name: `@inquirer/input`, `@inquirer/select`, `@inquirer/checkbox`, `@inquirer/confirm`, `@inquirer/search`, `@inquirer/password`, `@inquirer/expand`, `@inquirer/editor`, `@inquirer/number`, `@inquirer/rawlist`.
+
+### `@inquirer/core`
+
+The low-level API for building custom prompts. It provides a React-hooks-inspired model (`useState`, `useEffect`, `useKeypress`, and more) and handles rendering, cursor management, and signal handling for you.
+
+```bash
+npm install @inquirer/core
+```
+
+### `@inquirer/testing`
+
+First-class testing utilities for prompts built with `@inquirer/core`. Provides a `render()` function and a `screen` helper to simulate keypress events and assert on rendered output.
+
+```bash
+npm install --save-dev @inquirer/testing
+```
+
+### `@inquirer/i18n`
+
+A drop-in replacement for `@inquirer/prompts` with built-in localization. Locale is auto-detected from the `LANGUAGE`, `LC_ALL`, `LC_MESSAGES`, and `LANG` environment variables, with fallback to the `Intl` API.
+
+```js
+// Drop-in replacement — locale is auto-detected from environment variables
+import { input, select, confirm } from '@inquirer/i18n';
+```
+
+Built-in locales include English, French, Spanish, Chinese (Simplified), and Portuguese. You can also pin to a specific locale via sub-path imports (e.g. `@inquirer/i18n/fr`), or register a custom locale using the `createLocalizedPrompts` and `registerLocale` APIs.
+
+## Architecture
+
+- **ESM-first** — all packages ship as ES modules. CommonJS interop is supported via the Node.js compatibility layer.
+- **TypeScript** — every package ships with full TypeScript types. No `@types/*` packages needed.
+- **Node.js requirement** — Node `>=23.5.0`, `^22.13.0`, `^21.7.0`, or `^20.12.0` is required.
+- **Monorepo** — the repository is a Yarn workspaces monorepo. Each prompt lives in `packages/<name>` and is published independently.
+
+<Note>
+The legacy `inquirer` package (v8 and below) is still available on npm and continues to receive maintenance, but it is not actively developed. It uses a different callback/observable API and depends on RxJS. For new projects, use `@inquirer/prompts`. The two packages can coexist in the same project, so you can migrate incrementally.
+</Note>
+
+## Get started
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Install Inquirer.js and run your first interactive prompt in under 2 minutes.
+  </Card>
+  <Card title="Built-in prompts" icon="list" href="/prompts/input">
+    Explore all 10 prompt types with full option reference.
+  </Card>
+  <Card title="Custom prompts" icon="code" href="/core/overview">
+    Build your own prompts using the `@inquirer/core` API.
+  </Card>
+  <Card title="Testing" icon="flask" href="/testing/unit-testing">
+    Unit-test your prompts with `@inquirer/testing`.
+  </Card>
+</CardGroup>

@@ -1,0 +1,143 @@
+---
+title: "E2E Testing"
+description: "Test full CLI applications that use Inquirer prompts with the screen object from @inquirer/testing."
+---
+
+For testing complete CLI programs that internally use Inquirer prompts, `@inquirer/testing` provides a `screen` object via framework-specific entry points. All `@inquirer/*` prompts are automatically mocked so you can drive the entire interaction from your test.
+
+## Installation
+
+```bash
+npm install @inquirer/testing --save-dev
+```
+
+<Warning>
+  Import `@inquirer/testing/vitest` or `@inquirer/testing/jest` **before** importing any module that uses Inquirer prompts. Import order matters — the mock must be registered first.
+</Warning>
+
+## Vitest
+
+```ts
+import { describe, it, expect } from 'vitest';
+import { screen } from '@inquirer/testing/vitest';
+
+// Import your CLI AFTER @inquirer/testing/vitest
+import { runMyCli } from './my-cli.js';
+
+describe('my CLI', () => {
+  it('asks for name and confirms', async () => {
+    const result = runMyCli();
+
+    // First prompt is immediately available — no await needed
+    expect(screen.getScreen()).toContain('What is your name?');
+    screen.type('John');
+    screen.keypress('enter');
+
+    // Wait for the next prompt to render
+    await screen.next();
+    expect(screen.getScreen()).toContain('Confirm?');
+    screen.keypress('enter');
+
+    await result;
+  });
+});
+```
+
+## Jest
+
+```ts
+import { screen } from '@inquirer/testing/jest';
+import { runMyCli } from './my-cli.js';
+
+describe('my CLI', () => {
+  it('asks for name and confirms', async () => {
+    const result = runMyCli();
+
+    expect(screen.getScreen()).toContain('What is your name?');
+    screen.type('John');
+    screen.keypress('enter');
+
+    await screen.next();
+    expect(screen.getScreen()).toContain('Confirm?');
+    screen.keypress('enter');
+
+    await result;
+  });
+});
+```
+
+## screen API
+
+<ResponseField name="next()" type="() => Promise<void>">
+  Waits for the next screen update — prompt transitions, validation errors, or async updates. The initial prompt render is available immediately via `getScreen()` without calling `next()` first.
+</ResponseField>
+
+<ResponseField name="getScreen({ raw? })" type="({ raw?: boolean }) => string">
+  Returns the current prompt screen content. Strips ANSI codes by default. Pass `{ raw: true }` to keep escape sequences.
+</ResponseField>
+
+<ResponseField name="getFullOutput({ raw? })" type="({ raw?: boolean }) => Promise<string>">
+  Returns all accumulated output interpreted through a virtual terminal, resolving ANSI escape sequences into the actual screen state.
+</ResponseField>
+
+<ResponseField name="type(text)" type="(text: string) => void">
+  Types text character by character — writes to the stream and emits keypresses.
+</ResponseField>
+
+<ResponseField name="keypress(key)" type="(key: string | KeyObject) => void">
+  Sends a single keypress event (e.g. `'enter'`, `'up'`, `'down'`, `'backspace'`).
+</ResponseField>
+
+<ResponseField name="clear()" type="() => void">
+  Resets screen state. Called automatically before each test — you rarely need to call this manually.
+</ResponseField>
+
+## Mocking third-party prompts
+
+All `@inquirer/*` prompts are mocked automatically. To mock a custom or third-party prompt package, use `wrapPrompt`:
+
+<Tabs>
+  <Tab title="Vitest">
+    ```ts
+    import { screen, wrapPrompt } from '@inquirer/testing/vitest';
+
+    vi.mock('@my-company/custom-prompt', async (importOriginal) => {
+      const actual = await importOriginal<typeof import('@my-company/custom-prompt')>();
+      return { ...actual, default: wrapPrompt(actual.default) };
+    });
+    ```
+  </Tab>
+  <Tab title="Jest">
+    ```ts
+    import { screen } from '@inquirer/testing/jest';
+
+    jest.mock('@my-company/custom-prompt', () => {
+      const { wrapPrompt } = jest.requireActual('@inquirer/testing/jest');
+      const actual = jest.requireActual('@my-company/custom-prompt');
+      return { ...actual, default: wrapPrompt(actual.default) };
+    });
+    ```
+
+    <Note>
+      In Jest, `jest.mock()` factories are hoisted before imports, so `wrapPrompt` must be accessed via `jest.requireActual()` inside the factory.
+    </Note>
+  </Tab>
+</Tabs>
+
+## Important notes
+
+- **Sequential prompts only**: Multiple prompts are supported, but they must run one at a time — not concurrently.
+- **Editor prompt**: The external editor is mocked. `screen.type()` buffers text and `screen.keypress('enter')` submits it, matching the pattern of other prompts.
+
+<Tip>
+  For a comprehensive real-world example, see the [`@inquirer/demo` test suite](https://github.com/SBoudrias/Inquirer.js/blob/main/packages/demo/demo.test.ts) in the source repository.
+</Tip>
+
+<CardGroup cols={2}>
+  <Card title="Unit Testing" icon="flask" href="/testing/unit-testing">
+    Test individual prompts in isolation with render().
+  </Card>
+  <Card title="Custom Prompts" icon="code" href="/core/overview">
+    Build your own prompts using @inquirer/core.
+  </Card>
+</CardGroup>

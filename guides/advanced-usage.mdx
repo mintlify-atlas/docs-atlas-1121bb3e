@@ -1,0 +1,118 @@
+---
+title: "Advanced Usage"
+description: "Context options, cancellation with AbortSignal, and runtime configuration."
+---
+
+All Inquirer prompts accept two arguments. The first is the prompt configuration (unique to each prompt). The second is the context object, which provides runtime configuration that applies across all prompts.
+
+```js
+import { input } from '@inquirer/prompts';
+
+const answer = await input({ message: 'Enter your name' }, { /* context options */ });
+```
+
+## Context options
+
+<ParamField body="input" type="NodeJS.ReadableStream">
+  Override the default stdin stream. Defaults to `process.stdin`. Useful when you need to read from a custom stream or pipe input programmatically.
+</ParamField>
+
+<ParamField body="output" type="NodeJS.WritableStream">
+  Override the default stdout stream. Defaults to `process.stdout`. Useful for capturing prompt output or writing to a custom destination.
+</ParamField>
+
+<ParamField body="clearPromptOnDone" type="boolean">
+  When `true`, the prompt is cleared from the terminal after the user submits an answer. Defaults to `false`.
+</ParamField>
+
+<ParamField body="signal" type="AbortSignal">
+  An `AbortSignal` to cancel the prompt asynchronously. When the signal is aborted, the prompt promise rejects with an `AbortPromptError`.
+</ParamField>
+
+## Examples
+
+### Custom output stream
+
+```js
+import { confirm } from '@inquirer/prompts';
+import Stream from 'node:stream';
+
+const allowEmail = await confirm(
+  { message: 'Do you allow us to send you email?' },
+  {
+    output: new Stream.Writable({
+      write(chunk, _encoding, next) {
+        // Do something
+        next();
+      },
+    }),
+    clearPromptOnDone: true,
+  },
+);
+```
+
+### Cancellation with AbortSignal.timeout
+
+Use the built-in `AbortSignal.timeout()` utility to automatically cancel a prompt after a given number of milliseconds.
+
+```js
+import { confirm } from '@inquirer/prompts';
+
+const answer = await confirm({ message: 'Continue?' }, { signal: AbortSignal.timeout(5000) });
+```
+
+### Cancellation with AbortController
+
+For more control over when and why a prompt is cancelled, use `AbortController` directly.
+
+```js
+import { confirm } from '@inquirer/prompts';
+
+const controller = new AbortController();
+setTimeout(() => {
+  controller.abort(); // This will reject the promise
+}, 5000);
+
+const answer = await confirm({ message: 'Continue?' }, { signal: controller.signal });
+```
+
+### Getting the default value after timeout
+
+When a prompt times out, you can catch `AbortPromptError` and return a fallback value instead of letting the error propagate.
+
+```js
+import { input } from '@inquirer/prompts';
+
+const answer = await input(
+  { message: 'Enter a value (timing out in 5 seconds)' },
+  { signal: AbortSignal.timeout(5000) },
+).catch((error) => {
+  if (error.name === 'AbortPromptError') {
+    return 'Default value';
+  }
+
+  throw error;
+});
+```
+
+## Piping stdin
+
+<Warning>
+  When providing a custom `input` stream or piping `process.stdin`, you likely need to call `process.stdin.setRawMode(true)` before invoking any Inquirer prompt. Node.js normally handles this automatically, but when stdin is shadowed, it can lose track of the requirement. Symptoms include non-interactive prompts where arrow keys do not work.
+</Warning>
+
+## Using with nodemon and Node.js watch mode
+
+When running prompts under nodemon, pass the `--no-stdin` flag to prevent nodemon from consuming stdin before your script can.
+
+```sh
+npx nodemon ./packages/demo/demos/password.mjs --no-stdin
+```
+
+Node.js also has a built-in watch mode that works with Inquirer out of the box — no extra flags needed.
+
+```sh
+# One of depending on your need
+node --watch script.js
+node --watch-path=packages/ packages/demo/
+```

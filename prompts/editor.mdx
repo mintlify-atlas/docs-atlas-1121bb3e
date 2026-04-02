@@ -1,0 +1,113 @@
+---
+title: "Editor"
+description: "Opens the user's preferred editor for multi-line text input, then returns the saved content."
+---
+
+## Installation
+
+<CodeGroup>
+
+```sh npm
+npm install @inquirer/prompts
+```
+
+```sh yarn
+yarn add @inquirer/prompts
+```
+
+</CodeGroup>
+
+To install the standalone package instead:
+
+<CodeGroup>
+
+```sh npm
+npm install @inquirer/editor
+```
+
+```sh yarn
+yarn add @inquirer/editor
+```
+
+</CodeGroup>
+
+## Usage
+
+```js
+import { editor } from '@inquirer/prompts';
+// Or
+// import editor from '@inquirer/editor';
+
+const answer = await editor({
+  message: 'Enter a description',
+});
+```
+
+## How the editor is chosen
+
+The prompt launches the editor specified by the user's environment, checked in this order:
+
+1. `$VISUAL`
+2. `$EDITOR`
+3. `notepad` on Windows, `vim` on all other platforms
+
+The content is written to a temporary file. When the user saves and closes the editor, the file contents are read back and returned as the answer.
+
+<Tip>
+  Set the `postfix` option to match the language of the content you expect (e.g. `'.md'` or `'.yaml'`). Most editors will apply syntax highlighting based on file extension.
+</Tip>
+
+## Options
+
+<ParamField path="message" type="string" required>
+  The question to ask the user.
+</ParamField>
+
+<ParamField path="default" type="string">
+  Initial content pre-filled in the editor when it opens.
+</ParamField>
+
+<ParamField path="validate" type="(value: string) => boolean | string | Promise<boolean | string>">
+  Called on submit with the full editor contents. Return `true` to accept. Return a string to show it as an error message. Throwing a rejected promise is treated as a code error and will crash.
+</ParamField>
+
+<ParamField path="postfix" type="string">
+  File extension of the temporary file (e.g. `'.txt'`, `'.md'`). Defaults to `'.txt'`. Controls syntax highlighting in editors that support it.
+</ParamField>
+
+<ParamField path="file" type="IFileOptions">
+  Advanced options passed directly to the [`external-editor`](https://github.com/mrkmg/node-external-editor#config-options) package for configuring the temporary file.
+</ParamField>
+
+<ParamField path="waitForUserInput" type="boolean">
+  Defaults to `true`. When `false`, the editor opens immediately without waiting for the user to press Enter. Use this only when a `default` value makes the expected input self-explanatory, since the question itself will not be visible once the editor opens.
+</ParamField>
+
+<ParamField path="theme" type="Theme">
+  Customize the look of the prompt. See [Theming](#theming).
+</ParamField>
+
+## Theming
+
+Pass a partial `theme` object to override specific tokens. Unspecified keys fall back to the defaults.
+
+```ts
+type Theme = {
+  prefix: string | { idle: string; done: string };
+  spinner: {
+    interval: number;
+    frames: string[];
+  };
+  style: {
+    message: (text: string, status: 'idle' | 'done' | 'loading') => string;
+    error: (text: string) => string;
+    help: (text: string) => string;
+    key: (text: string) => string;
+  };
+  validationFailureMode: 'keep' | 'clear';
+};
+```
+
+<Note>
+  `validationFailureMode` controls what happens when the submitted content fails validation. The default `'keep'` reopens the editor with the current content intact. Set it to `'clear'` to reset to the `default` value or an empty string.
+</Note>

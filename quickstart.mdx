@@ -1,80 +1,128 @@
 ---
 title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+description: "Install Inquirer.js and run your first interactive prompt in under 2 minutes."
 ---
 
-## Get started in three steps
+<Steps>
+  <Step title="Install @inquirer/prompts">
+    Install the main package, which includes all built-in prompts.
 
-Get your documentation site running locally and make your first customization.
+    <CodeGroup>
 
-### Step 1: Set up your local environment
+    ```bash npm
+    npm install @inquirer/prompts
+    ```
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+    ```bash yarn
+    yarn add @inquirer/prompts
+    ```
 
-### Step 2: Deploy your changes
+    ```bash pnpm
+    pnpm add @inquirer/prompts
+    ```
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+    ```bash bun
+    bun add @inquirer/prompts
+    ```
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+    </CodeGroup>
+  </Step>
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+  <Step title="Import and use a prompt">
+    Each prompt is an `async` function that resolves to the user's answer. Use `await` to pause execution until the user responds.
 
-### Step 3: Go live
+    ```js index.mjs
+    import { input } from '@inquirer/prompts';
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+    const answer = await input({ message: 'Enter your name' });
+    console.log(`Hello, ${answer}!`);
+    ```
+
+    Run the file with Node.js:
+
+    ```bash
+    node index.mjs
+    ```
+  </Step>
+
+  <Step title="Try the interactive demo">
+    To explore all available prompts without writing any code, run the official demo directly with `npx`:
+
+    ```bash
+    npx @inquirer/demo@latest
+    ```
+  </Step>
+</Steps>
+
+## Multiple prompts
+
+Collect several answers by awaiting each prompt in sequence and grouping them into an object.
+
+```js
+import { input, select, confirm } from '@inquirer/prompts';
+
+const answers = {
+  firstName: await input({ message: "What's your first name?" }),
+  packageManager: await select({
+    message: 'Select a package manager',
+    choices: [
+      { name: 'npm', value: 'npm' },
+      { name: 'yarn', value: 'yarn' },
+      { name: 'pnpm', value: 'pnpm' },
+      { name: 'bun', value: 'bun' },
+    ],
+  }),
+  allowEmail: await confirm({ message: 'Do you allow us to send you email?' }),
+};
+
+console.log(answers);
+```
+
+Each prompt resolves before the next one starts, so the order of questions matches the order they appear in code.
+
+<Tip>
+When a user presses Ctrl+C to exit a prompt, Inquirer rejects the promise with an `ExitPromptError`. If you don't handle this, Node.js will print a stack trace to the terminal. Wrap your prompts in a `try/catch` to exit cleanly:
+
+```js
+import { input } from '@inquirer/prompts';
+
+try {
+  const name = await input({ message: 'Enter your name' });
+  console.log(`Hello, ${name}!`);
+} catch (error) {
+  if (error.name === 'ExitPromptError') {
+    // User pressed Ctrl+C — exit silently
+    process.exit(0);
+  }
+  throw error;
+}
+```
+
+Alternatively, add a global handler:
+
+```js
+process.on('uncaughtException', (error) => {
+  if (error.name === 'ExitPromptError') {
+    process.exit(0);
+  }
+  throw error;
+});
+```
+</Tip>
 
 ## Next steps
 
-Now that you have your docs running, explore these key features:
-
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="Input prompt" icon="keyboard" href="/prompts/input">
+    Free text entry with validation, filtering, and default values.
+  </Card>
+  <Card title="Select prompt" icon="circle-dot" href="/prompts/select">
+    Single-choice list with keyboard navigation and search.
+  </Card>
+  <Card title="Advanced usage" icon="sliders" href="/guides/advanced-usage">
+    Context options, AbortSignal cancellation, stream overrides, and more.
+  </Card>
+  <Card title="Custom prompts" icon="code" href="/core/overview">
+    Build your own prompts with the `@inquirer/core` API.
+  </Card>
 </CardGroup>
-
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>

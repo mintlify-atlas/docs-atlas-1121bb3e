@@ -1,0 +1,210 @@
+---
+title: "Checkbox"
+description: "A multi-select prompt that lets users check one or more options from a scrollable list."
+---
+
+## Installation
+
+<CodeGroup>
+
+```sh npm
+npm install @inquirer/prompts
+```
+
+```sh yarn
+yarn add @inquirer/prompts
+```
+
+</CodeGroup>
+
+To install the standalone package instead:
+
+<CodeGroup>
+
+```sh npm
+npm install @inquirer/checkbox
+```
+
+```sh yarn
+yarn add @inquirer/checkbox
+```
+
+</CodeGroup>
+
+## Usage
+
+```js
+import { checkbox, Separator } from '@inquirer/prompts';
+// Or
+// import checkbox, { Separator } from '@inquirer/checkbox';
+
+const answer = await checkbox({
+  message: 'Select features to enable',
+  choices: [
+    { name: 'TypeScript', value: 'typescript' },
+    { name: 'ESLint', value: 'eslint' },
+    new Separator(),
+    { name: 'Prettier', value: 'prettier', checked: true },
+    { name: 'Husky', value: 'husky', disabled: '(requires git)' },
+  ],
+});
+```
+
+## Options
+
+<ParamField path="message" type="string" required>
+  The question to ask the user.
+</ParamField>
+
+<ParamField path="choices" type="Array<Choice | Separator>" required>
+  The list of available choices. Can also be an array of plain strings, in which case the string is used as both the `value` and the `name`. See [Choice object](#choice-object) below.
+</ParamField>
+
+<ParamField path="pageSize" type="number">
+  Number of choices visible at once before the list paginates. Defaults to `7`.
+</ParamField>
+
+<ParamField path="loop" type="boolean">
+  Defaults to `true`. When `false`, the cursor stops at the top and bottom of the list instead of wrapping around.
+</ParamField>
+
+<ParamField path="required" type="boolean">
+  When `true`, the user must select at least one choice before submitting.
+</ParamField>
+
+<ParamField path="validate" type="(choices: Choice[]) => boolean | string | Promise<boolean | string>">
+  Called on submit with the array of currently selected choices. Return `true` to accept. Return a string to show it as an error message. Throwing a rejected promise is treated as a code error and will crash.
+</ParamField>
+
+<ParamField path="shortcuts" type="Shortcuts">
+  Customize or disable the `all` and `invert` shortcut keys. See [Shortcuts](#shortcuts).
+</ParamField>
+
+<ParamField path="theme" type="Theme">
+  Customize the look of the prompt. See [Theming](#theming).
+</ParamField>
+
+## Choice object
+
+```ts
+type Choice<Value> = {
+  value: Value;
+  name?: string;
+  checkedName?: string;
+  description?: string;
+  short?: string;
+  checked?: boolean;
+  disabled?: boolean | string;
+};
+```
+
+<ResponseField name="value" type="Value" required>
+  The value included in the returned array when this choice is checked.
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  The label displayed in the list.
+</ResponseField>
+
+<ResponseField name="checkedName" type="string">
+  An alternative label (or format) shown when the choice is in the checked state.
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  A longer description shown below the list when the cursor lands on this choice.
+</ResponseField>
+
+<ResponseField name="short" type="string">
+  The label rendered next to the question after the prompt is submitted. Defaults to `name`.
+</ResponseField>
+
+<ResponseField name="checked" type="boolean">
+  Pre-checks this choice when the prompt first renders.
+</ResponseField>
+
+<ResponseField name="disabled" type="boolean | string">
+  Prevents the choice from being toggled. Pass a string to show a custom reason (e.g. `'(requires git)'`).
+</ResponseField>
+
+## Separator
+
+`Separator` objects can be added to `choices` to render non-selectable dividers. By default a horizontal line is drawn. Pass a string to render custom text instead.
+
+```js
+new Separator()                    // renders ──────────────
+new Separator('── Dev tools ──')   // renders ── Dev tools ──
+```
+
+## Shortcuts
+
+The `shortcuts` option lets you remap or disable the built-in keyboard shortcuts for selecting all items or inverting the selection.
+
+```ts
+type Shortcuts = {
+  all?: string | null;    // default: 'a'
+  invert?: string | null; // default: 'i'
+};
+```
+
+Set a key to `null` to disable it entirely.
+
+```js
+await checkbox({
+  message: 'Select packages',
+  choices,
+  shortcuts: { invert: null }, // disable the invert shortcut
+});
+```
+
+## Theming
+
+Pass a partial `theme` object to override specific tokens. Unspecified keys fall back to the defaults.
+
+```ts
+type Theme = {
+  prefix: string | { idle: string; done: string };
+  spinner: {
+    interval: number;
+    frames: string[];
+  };
+  style: {
+    answer: (text: string) => string;
+    message: (text: string, status: 'idle' | 'done' | 'loading') => string;
+    error: (text: string) => string;
+    defaultAnswer: (text: string) => string;
+    help: (text: string) => string;
+    highlight: (text: string) => string;
+    key: (text: string) => string;
+    disabledChoice: (text: string) => string;
+    description: (text: string) => string;
+    renderSelectedChoices: <T>(
+      selectedChoices: ReadonlyArray<Choice<T>>,
+      allChoices: ReadonlyArray<Choice<T> | Separator>,
+    ) => string;
+    keysHelpTip: (keys: [key: string, action: string][]) => string | undefined;
+  };
+  icon: {
+    checked: string;
+    unchecked: string;
+    cursor: string;
+  };
+};
+```
+
+### `theme.style.keysHelpTip`
+
+Customize or localize the keyboard shortcuts hint displayed below the list. Return `undefined` to hide the hint entirely.
+
+```js
+theme: {
+  style: {
+    keysHelpTip: (keys) => {
+      // Hide the help tip completely:
+      return undefined;
+
+      // Or customize / localize the formatting:
+      return keys.map(([key, action]) => `${key}: ${action}`).join(' | ');
+    },
+  },
+}
+```

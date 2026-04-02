@@ -1,0 +1,190 @@
+---
+title: "Recipes"
+description: "Common patterns and solutions for real-world Inquirer.js usage."
+---
+
+<AccordionGroup>
+
+<Accordion title="Handling Ctrl+C gracefully">
+
+When a user presses `Ctrl+C` to exit a prompt, Inquirer rejects the prompt promise with an `ExitPromptError`. In an `async/await` context, unhandled rejections print a stack trace in the terminal — not a great user experience.
+
+```
+ExitPromptError: User force closed the prompt with 0 null
+  at file://example/packages/core/dist/esm/lib/create-prompt.js:55:20
+  at Emitter.emit (file://example/node_modules/signal-exit/dist/mjs/index.js:67:19)
+  ...
+```
+
+**Option 1 — wrap in try/catch:**
+
+```ts
+try {
+  const answer = await input({ message: 'Enter your name' });
+  console.log(`Hello, ${answer}!`);
+} catch (error) {
+  if (error instanceof Error && error.name === 'ExitPromptError') {
+    // User pressed Ctrl+C — exit cleanly
+  } else {
+    throw error;
+  }
+}
+```
+
+**Option 2 — global uncaught exception handler:**
+
+```ts
+process.on('uncaughtException', (error) => {
+  if (error instanceof Error && error.name === 'ExitPromptError') {
+    console.log('👋 until next time!');
+  } else {
+    // Rethrow unknown errors
+    throw error;
+  }
+});
+```
+
+<Tip>
+  If you are using a CLI framework such as Clipanion, handle `ExitPromptError` through its built-in error handling mechanism (e.g., the `catch` method) rather than registering a global listener.
+</Tip>
+
+</Accordion>
+
+<Accordion title="Collecting answers in an object">
+
+When asking many questions, you can collect all answers into a single object instead of declaring a separate variable for each one.
+
+```js
+import { input, confirm } from '@inquirer/prompts';
+
+const answers = {
+  firstName: await input({ message: "What's your first name?" }),
+  allowEmail: await confirm({ message: 'Do you allow us to send you email?' }),
+};
+
+console.log(answers.firstName);
+```
+
+</Accordion>
+
+<Accordion title="Conditional questions">
+
+Ask follow-up questions based on the answer to a previous prompt by using standard `if` statements.
+
+```js
+import { input, confirm } from '@inquirer/prompts';
+
+const allowEmail = await confirm({ message: 'Do you allow us to send you email?' });
+
+let email;
+if (allowEmail) {
+  email = await input({ message: 'What is your email address' });
+}
+```
+
+</Accordion>
+
+<Accordion title="Get default value after timeout">
+
+Combine `AbortSignal.timeout()` with a `.catch()` handler to fall back to a default value when the user does not respond in time.
+
+```js
+import { input } from '@inquirer/prompts';
+
+const answer = await input(
+  { message: 'Enter a value (timing out in 5 seconds)' },
+  { signal: AbortSignal.timeout(5000) },
+).catch((error) => {
+  if (error.name === 'AbortPromptError') {
+    return 'Default value';
+  }
+
+  throw error;
+});
+```
+
+</Accordion>
+
+<Accordion title="Using in git hooks / pre-commit scripts">
+
+Tools like `husky` and `lint-staged` run scripts in a non-interactive shell, where Inquirer cannot receive keypress events. You need to explicitly attach a TTY (interactive input stream) to the process.
+
+**In `package.json`:**
+
+```json
+{
+  "scripts": {
+    "precommit": "my-script < /dev/tty"
+  }
+}
+```
+
+**In a shell script file** (required on Windows and as an alternative on Unix):
+
+```sh
+#!/bin/sh
+exec < /dev/tty
+
+node my-script.js
+```
+
+<Tip>
+  The `exec < /dev/tty` approach works in any POSIX shell and is the most portable option for cross-platform git hooks.
+</Tip>
+
+</Accordion>
+
+<Accordion title="Using with nodemon">
+
+nodemon captures stdin by default, which interferes with Inquirer prompts. Pass `--no-stdin` to disable this behavior.
+
+```sh
+npx nodemon ./packages/demo/demos/password.mjs --no-stdin
+```
+
+Node.js has a built-in watch mode that works with Inquirer out of the box — no extra flags needed.
+
+```sh
+# One of depending on your need
+node --watch script.js
+node --watch-path=packages/ packages/demo/
+```
+
+</Accordion>
+
+<Accordion title="Wait for async config">
+
+Prompt configuration options that require async values can be awaited inline inside the config object.
+
+```js
+import { confirm } from '@inquirer/prompts';
+
+const answer = await confirm({ message: await getMessage() });
+```
+
+</Accordion>
+
+<Accordion title="Using with npx in bash scripts">
+
+You can use Inquirer prompts directly in shell scripts via `npx`. The community package [`@inquirer-cli`](https://github.com/fishballapp/inquirer-cli) exposes each prompt as a standalone CLI command.
+
+**Prompt for text input:**
+
+```bash
+name=$(npx -y @inquirer-cli/input -r "What is your name?")
+echo "Hello, $name!"
+```
+
+**Interactive version bump:**
+
+```bash
+npm version $(npx -y @inquirer-cli/select -c patch -c minor -c major 'Select Version')
+```
+
+<Tip>
+  The `-y` flag tells npx to install the package automatically without prompting for confirmation, which is important in CI and scripting contexts.
+</Tip>
+
+</Accordion>
+
+</AccordionGroup>

@@ -1,0 +1,189 @@
+---
+title: "Select"
+description: "A single-choice list prompt that lets users pick one option from a scrollable list."
+---
+
+## Installation
+
+<CodeGroup>
+
+```sh npm
+npm install @inquirer/prompts
+```
+
+```sh yarn
+yarn add @inquirer/prompts
+```
+
+</CodeGroup>
+
+To install the standalone package instead:
+
+<CodeGroup>
+
+```sh npm
+npm install @inquirer/select
+```
+
+```sh yarn
+yarn add @inquirer/select
+```
+
+</CodeGroup>
+
+## Usage
+
+```js
+import { select, Separator } from '@inquirer/prompts';
+// Or
+// import select, { Separator } from '@inquirer/select';
+
+const answer = await select({
+  message: 'Select a package manager',
+  choices: [
+    {
+      name: 'npm',
+      value: 'npm',
+      description: 'npm is the most popular package manager',
+    },
+    {
+      name: 'yarn',
+      value: 'yarn',
+      description: 'yarn is an awesome package manager',
+    },
+    new Separator(),
+    {
+      name: 'jspm',
+      value: 'jspm',
+      disabled: true,
+    },
+    {
+      name: 'pnpm',
+      value: 'pnpm',
+      disabled: '(pnpm is not available)',
+    },
+  ],
+});
+```
+
+## Options
+
+<ParamField path="message" type="string" required>
+  The question to ask the user.
+</ParamField>
+
+<ParamField path="choices" type="Array<Choice | Separator>" required>
+  The list of available choices. Can also be an array of plain strings, in which case the string is used as both the `value` and the `name`. See [Choice object](#choice-object) below.
+</ParamField>
+
+<ParamField path="default" type="Value">
+  The value of the choice in front of which the cursor initially appears. When omitted, the cursor starts on the first selectable item.
+</ParamField>
+
+<ParamField path="pageSize" type="number">
+  Number of choices visible at once before the list paginates. Defaults to `7`.
+</ParamField>
+
+<ParamField path="loop" type="boolean">
+  Defaults to `true`. When `false`, the cursor stops at the top and bottom of the list instead of wrapping around.
+</ParamField>
+
+<ParamField path="theme" type="Theme">
+  Customize the look of the prompt. See [Theming](#theming).
+</ParamField>
+
+## Choice object
+
+```ts
+type Choice<Value> = {
+  value: Value;
+  name?: string;
+  description?: string;
+  short?: string;
+  disabled?: boolean | string;
+};
+```
+
+<ResponseField name="value" type="Value" required>
+  The value returned by `await select()` when this choice is selected.
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  The label displayed in the list. Defaults to the stringified `value`.
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  A longer description shown below the list when the cursor lands on this choice.
+</ResponseField>
+
+<ResponseField name="short" type="string">
+  The label rendered next to the question after the prompt is submitted. Defaults to `name`.
+</ResponseField>
+
+<ResponseField name="disabled" type="boolean | string">
+  Prevents the choice from being selected. Pass a string to show a custom reason (e.g. `'(coming soon)'`).
+</ResponseField>
+
+## Separator
+
+`Separator` objects can be added to the `choices` array to render non-selectable dividers. By default a horizontal line is drawn. Pass a string to render custom text instead.
+
+```js
+new Separator()                    // renders ──────────────
+new Separator('── Dependencies ──') // renders ── Dependencies ──
+```
+
+Separators are commonly used to label groups inside long choice lists.
+
+## Theming
+
+Pass a partial `theme` object to override specific tokens. Unspecified keys fall back to the defaults.
+
+```ts
+type Theme = {
+  prefix: string | { idle: string; done: string };
+  spinner: {
+    interval: number;
+    frames: string[];
+  };
+  style: {
+    answer: (text: string) => string;
+    message: (text: string, status: 'idle' | 'done' | 'loading') => string;
+    error: (text: string) => string;
+    help: (text: string) => string;
+    highlight: (text: string) => string;
+    description: (text: string) => string;
+    disabled: (text: string) => string;
+    keysHelpTip: (keys: [key: string, action: string][]) => string | undefined;
+  };
+  icon: {
+    cursor: string;
+  };
+  indexMode: 'hidden' | 'number';
+};
+```
+
+### `theme.indexMode`
+
+Controls whether a number is shown before each choice.
+
+- `'hidden'` (default) — no indices are shown.
+- `'number'` — displays a number before each choice (e.g. `1. Option A`).
+
+### `theme.style.keysHelpTip`
+
+Customize or localize the keyboard shortcuts hint displayed below the list. Return `undefined` to hide the hint entirely.
+
+```js
+theme: {
+  style: {
+    keysHelpTip: (keys) => {
+      // Hide the help tip completely:
+      return undefined;
+
+      // Or customize / localize the formatting:
+      return keys.map(([key, action]) => `${key}: ${action}`).join(' | ');
+    },
+  },
+}
+```

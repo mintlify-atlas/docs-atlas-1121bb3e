@@ -1,0 +1,142 @@
+---
+title: "Unit Testing"
+description: "Test individual Inquirer prompts in isolation using the render() function from @inquirer/testing."
+---
+
+`@inquirer/testing` provides `render()` for testing a single prompt in isolation. It creates a virtual terminal, feeds keypresses to the prompt, and lets you assert on the rendered output.
+
+## Installation
+
+```bash
+npm install @inquirer/testing --save-dev
+```
+
+## Basic usage
+
+```ts
+import { render } from '@inquirer/testing';
+import input from '@inquirer/input';
+
+describe('input prompt', () => {
+  it('handles simple use case', async () => {
+    const { answer, events, getScreen } = await render(input, {
+      message: 'What is your name',
+    });
+
+    expect(getScreen()).toMatchInlineSnapshot(`"? What is your name"`);
+
+    events.type('J');
+    expect(getScreen()).toMatchInlineSnapshot(`"? What is your name J"`);
+
+    events.type('ohn');
+    events.keypress('enter');
+
+    await expect(answer).resolves.toEqual('John');
+    expect(getScreen()).toMatchInlineSnapshot(`"? What is your name John"`);
+  });
+});
+```
+
+## render() API
+
+`render(prompt, config)` takes two arguments:
+
+<ParamField path="prompt" type="Prompt" required>
+  The Inquirer prompt to test — the return value of `createPrompt()`.
+</ParamField>
+
+<ParamField path="config" type="PromptConfig" required>
+  The prompt configuration object (same as the first argument when calling the prompt normally).
+</ParamField>
+
+`render` returns a promise that resolves once the prompt is initially rendered, with these values:
+
+<ResponseField name="answer" type="Promise">
+  Resolves with the final answer when the user submits a valid response.
+</ResponseField>
+
+<ResponseField name="getScreen" type="({ raw?: boolean }) => string">
+  Returns the current rendered screen content. Strips ANSI codes by default. Pass `{ raw: true }` to keep them.
+</ResponseField>
+
+<ResponseField name="nextRender" type="() => Promise<void>">
+  Waits for the next screen update. Use this after triggering async actions (validation, async source functions). Coalesces rapid re-renders so one `await nextRender()` captures the final settled state.
+</ResponseField>
+
+<ResponseField name="events" type="object">
+  Utilities to simulate user interaction:
+  - `keypress(key: string | KeyObject)` — trigger a keypress
+  - `type(text: string)` — type a string character by character
+</ResponseField>
+
+<ResponseField name="getFullOutput" type="() => Promise<string>">
+  Returns all accumulated terminal output interpreted through a virtual terminal, resolving ANSI escape sequences into actual screen state.
+</ResponseField>
+
+## Testing async validation
+
+When a keypress triggers async validation, use `nextRender()` to wait before asserting:
+
+```ts
+import { render } from '@inquirer/testing';
+import input from '@inquirer/input';
+
+it('shows a validation error', async () => {
+  const { answer, events, getScreen, nextRender } = await render(input, {
+    message: 'Enter a number',
+    validate: (value) => /^\d+$/.test(value) || 'Must be a number',
+  });
+
+  events.type('abc');
+  events.keypress('enter');
+
+  await nextRender(); // wait for validation to complete
+  expect(getScreen()).toContain('Must be a number');
+
+  events.keypress('backspace');
+  events.keypress('backspace');
+  events.keypress('backspace');
+  events.type('42');
+  events.keypress('enter');
+
+  await expect(answer).resolves.toEqual('42');
+});
+```
+
+## Testing a select prompt
+
+```ts
+import { render } from '@inquirer/testing';
+import { select } from '@inquirer/prompts';
+
+it('selects a choice with arrow keys', async () => {
+  const { answer, events, getScreen } = await render(select, {
+    message: 'Pick one',
+    choices: [
+      { name: 'Option A', value: 'a' },
+      { name: 'Option B', value: 'b' },
+      { name: 'Option C', value: 'c' },
+    ],
+  });
+
+  expect(getScreen()).toContain('Option A');
+
+  events.keypress('down');
+  events.keypress('enter');
+
+  await expect(answer).resolves.toEqual('b');
+});
+```
+
+<Tip>
+  For a comprehensive real-world example, see the [`@inquirer/input` test suite](https://github.com/SBoudrias/Inquirer.js/blob/main/packages/input/input.test.ts) in the source repository.
+</Tip>
+
+<CardGroup cols={2}>
+  <Card title="E2E Testing" icon="terminal" href="/testing/e2e-testing">
+    Test full CLI applications that use Inquirer prompts.
+  </Card>
+  <Card title="Custom Prompts" icon="code" href="/core/overview">
+    Build your own prompts using @inquirer/core.
+  </Card>
+</CardGroup>

@@ -1,0 +1,140 @@
+---
+title: "Expand"
+description: "A compact single-select prompt where each option is assigned a keyboard shortcut. Pressing 'h' expands the full list."
+---
+
+## Installation
+
+<CodeGroup>
+
+```sh npm
+npm install @inquirer/prompts
+```
+
+```sh yarn
+yarn add @inquirer/prompts
+```
+
+</CodeGroup>
+
+To install the standalone package instead:
+
+<CodeGroup>
+
+```sh npm
+npm install @inquirer/expand
+```
+
+```sh yarn
+yarn add @inquirer/expand
+```
+
+</CodeGroup>
+
+## Usage
+
+```js
+import { expand } from '@inquirer/prompts';
+// Or
+// import expand from '@inquirer/expand';
+
+const answer = await expand({
+  message: 'Conflict on file.js',
+  default: 'y',
+  choices: [
+    {
+      key: 'y',
+      name: 'Overwrite',
+      value: 'overwrite',
+    },
+    {
+      key: 'a',
+      name: 'Overwrite this one and all next',
+      value: 'overwrite_all',
+    },
+    {
+      key: 'd',
+      name: 'Show diff',
+      value: 'diff',
+    },
+    {
+      key: 'x',
+      name: 'Abort',
+      value: 'abort',
+    },
+  ],
+});
+```
+
+The prompt displays a compact hint like `(y/a/d/x/h)` inline with the question. Typing `h` expands the list to show all choices with their names.
+
+<Note>
+  The `h` (help/expand) key is always added automatically. You do not need to include it in your `choices` array.
+</Note>
+
+## Options
+
+<ParamField path="message" type="string" required>
+  The question to ask the user.
+</ParamField>
+
+<ParamField path="choices" type="Choice[]" required>
+  The available choices. Each must have a unique single-character `key`. The `h` key is reserved and automatically added. See [Choice object](#choice-object) below.
+</ParamField>
+
+<ParamField path="default" type="string">
+  The `key` of the choice that is pre-selected. Must match one of the defined choice keys.
+</ParamField>
+
+<ParamField path="expanded" type="boolean">
+  When `true`, the full list is shown immediately without requiring the user to press `h`.
+</ParamField>
+
+<ParamField path="theme" type="Theme">
+  Customize the look of the prompt. See [Theming](#theming).
+</ParamField>
+
+## Choice object
+
+```ts
+type Choice<Value> = {
+  value: Value;
+  name?: string;
+  key: string;
+};
+```
+
+<ResponseField name="value" type="Value" required>
+  The value returned by `await expand()` when this choice is selected.
+</ResponseField>
+
+<ResponseField name="key" type="string" required>
+  The single lowercase alphanumeric character the user types to select this choice. Must be unique across all choices.
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  The label shown when the list is expanded. Defaults to the stringified `value`.
+</ResponseField>
+
+`Separator` objects can be included in `choices` to add non-selectable dividers when the list is expanded.
+
+## Theming
+
+Pass a partial `theme` object to override specific tokens. Unspecified keys fall back to the defaults.
+
+```ts
+type Theme = {
+  prefix: string | { idle: string; done: string };
+  spinner: {
+    interval: number;
+    frames: string[];
+  };
+  style: {
+    answer: (text: string) => string;
+    message: (text: string, status: 'idle' | 'done' | 'loading') => string;
+    error: (text: string) => string;
+    defaultAnswer: (text: string) => string;
+    highlight: (text: string) => string;
+  };
+};
+```

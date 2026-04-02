@@ -1,0 +1,148 @@
+---
+title: "Custom Prompts Overview"
+description: "Build your own interactive CLI prompts using the @inquirer/core package."
+---
+
+`@inquirer/core` is the library that powers all official Inquirer prompts. It exposes a lightweight, React-hooks-inspired API—without JSX—that you can use to build your own fully custom interactive CLI prompts.
+
+## Installation
+
+<CodeGroup>
+
+```bash npm
+npm install @inquirer/core
+```
+
+```bash yarn
+yarn add @inquirer/core
+```
+
+```bash pnpm
+pnpm add @inquirer/core
+```
+
+</CodeGroup>
+
+## How it works
+
+A prompt is a function that returns a string rendered to the terminal. That render function runs every time state changes, and the new string replaces whatever was previously on screen. The text cursor appears after the returned string.
+
+`createPrompt()` wraps your render function to set up the rendering layer, inject state management hooks, and wait until `done()` is called before resolving the prompt's promise.
+
+```ts
+import { createPrompt } from '@inquirer/core';
+
+const input = createPrompt((config, done) => {
+  // Implement your logic here
+
+  return '? My question';
+});
+
+const answer = await input({ /* config */ });
+```
+
+### The render function
+
+The render function receives two arguments:
+
+- **`config`** — the object passed by the caller when invoking the prompt
+- **`done(value)`** — a callback you call to close the prompt and resolve it with `value`
+
+The function runs on every state change. Whatever string it returns is what the user sees on screen.
+
+### Returning content below the prompt
+
+The render function can return a **two-element tuple** `[string, string]` instead of a plain string. The first element is the prompt line (where the cursor sits); the second is additional content rendered below it, such as an error message or a list of choices.
+
+```ts
+const number = createPrompt((config, done) => {
+  // Add logic here
+
+  return [`? My question ${input}`, `! The input must be a number`];
+});
+```
+
+## TypeScript generics
+
+`createPrompt` accepts two type parameters:
+
+```ts
+// createPrompt<Value, Config>
+const input = createPrompt<string, { message: string }>((config, done) => {
+  // config is typed as { message: string }
+  // done expects a string argument
+  // the prompt resolves to string
+});
+```
+
+| Generic | Description |
+|---------|-------------|
+| `Value` | The type of the resolved answer (the argument passed to `done`) |
+| `Config` | The shape of the config object callers pass when invoking the prompt |
+
+```ts
+const answer: string = await input({ message: 'What is your name?' });
+```
+
+## Complete example
+
+The following implements a simple yes/no confirm prompt:
+
+```ts
+import { styleText } from 'node:util';
+import {
+  createPrompt,
+  useState,
+  useKeypress,
+  isEnterKey,
+  usePrefix,
+  type Status,
+} from '@inquirer/core';
+
+const confirm = createPrompt<boolean, { message: string; default?: boolean }>(
+  (config, done) => {
+    const [status, setStatus] = useState<Status>('idle');
+    const [value, setValue] = useState('');
+    const prefix = usePrefix({});
+
+    useKeypress((key, rl) => {
+      if (isEnterKey(key)) {
+        const answer = value ? /^y(es)?/i.test(value) : config.default !== false;
+        setValue(answer ? 'yes' : 'no');
+        setStatus('done');
+        done(answer);
+      } else {
+        setValue(rl.line);
+      }
+    });
+
+    let formattedValue = value;
+    let defaultValue = '';
+    if (status === 'done') {
+      formattedValue = styleText('cyan', value);
+    } else {
+      defaultValue = styleText('dim', config.default === false ? ' (y/N)' : ' (Y/n)');
+    }
+
+    const message = styleText('bold', config.message);
+    return `${prefix} ${message}${defaultValue} ${formattedValue}`;
+  },
+);
+
+const answer = await confirm({ message: 'Do you want to continue?' });
+```
+
+<Note>
+  You can browse the full source of every official prompt for real-world examples: `@inquirer/confirm`, `@inquirer/input`, `@inquirer/select`, `@inquirer/checkbox`, and more.
+</Note>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Hooks" icon="anchor" href="/core/hooks">
+    State, keypresses, effects, memoization, pagination, and more.
+  </Card>
+  <Card title="Key utilities" icon="keyboard" href="/core/key-utilities">
+    Helper functions for detecting specific keypresses in your handlers.
+  </Card>
+</CardGroup>

@@ -1,0 +1,149 @@
+---
+title: "Theming"
+description: "Customize the look of any Inquirer prompt with the theme option."
+---
+
+Every Inquirer prompt accepts an optional `theme` object as part of its configuration. Theme objects are partial — you only need to override the properties you want to change. Unspecified properties fall back to the defaults.
+
+```ts
+import { input } from '@inquirer/prompts';
+
+const answer = await input({
+  message: 'Enter your name',
+  theme: {
+    // Only override what you need
+    style: {
+      answer: (text) => text.toUpperCase(),
+    },
+  },
+});
+```
+
+## Default theme
+
+The base `DefaultTheme` type shared across all official prompts is:
+
+```ts
+type DefaultTheme = {
+  prefix: string | { idle: string; done: string };
+  spinner: {
+    interval: number;
+    frames: string[];
+  };
+  style: {
+    answer: (text: string) => string;
+    message: (text: string, status: 'idle' | 'done' | 'loading') => string;
+    error: (text: string) => string;
+    defaultAnswer: (text: string) => string;
+    help: (text: string) => string;
+    highlight: (text: string) => string;
+    key: (text: string) => string;
+  };
+};
+```
+
+### Default values
+
+| Property | Default |
+| --- | --- |
+| `prefix.idle` | Blue `?` |
+| `prefix.done` | Green `✔` |
+| `spinner.interval` | `80` ms |
+| `spinner.frames` | `['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']` (yellow) |
+| `style.answer` | `styleText('cyan', text)` |
+| `style.message` | `styleText('bold', text)` |
+| `style.error` | `styleText('red', '> ' + text)` |
+| `style.defaultAnswer` | `styleText('dim', '(' + text + ')')` |
+| `style.help` | `styleText('dim', text)` |
+| `style.highlight` | `styleText('cyan', text)` |
+| `style.key` | `styleText('cyan', styleText('bold', '<' + text + '>'))` |
+
+## Examples
+
+### Customizing prefix and answer style
+
+Use `styleText` from `node:util` for ANSI color styling — no extra dependencies needed.
+
+```ts
+import { styleText } from 'node:util';
+import { input } from '@inquirer/prompts';
+
+const answer = await input({
+  message: 'Enter your name',
+  theme: {
+    prefix: { idle: '›', done: '✓' },
+    style: {
+      answer: (text) => styleText('green', styleText('bold', text)),
+    },
+  },
+});
+```
+
+### Custom spinner frames
+
+Replace the default braille spinner with any sequence of frames. Use the [`cli-spinners`](https://github.com/sindresorhus/cli-spinners) package for a wide variety of options.
+
+```ts
+import { search } from '@inquirer/prompts';
+
+const result = await search({
+  message: 'Search for a package',
+  source: async (input) => fetchResults(input),
+  theme: {
+    spinner: {
+      interval: 120,
+      frames: ['◐', '◓', '◑', '◒'],
+    },
+  },
+});
+```
+
+## Prompt-specific theme extensions
+
+Each prompt may extend the base theme with additional properties. For example:
+
+- **`select`** adds `icon.cursor` to customize the cursor character next to the focused item.
+- **`checkbox`** adds `icon.checked`, `icon.unchecked`, and `icon.cursor`.
+- **`input`** and **`editor`** add `validationFailureMode` to control how validation errors are displayed.
+
+Refer to the individual prompt documentation for the full list of theme extensions.
+
+### Hiding or reformatting the keys help tip
+
+Many prompts display a help tip listing available key bindings (e.g., `(Use arrow keys)`). You can customize or suppress it via the prompt's `theme.style.help` or the prompt-specific `keysHelpTip` option.
+
+```ts
+import { select } from '@inquirer/prompts';
+
+const answer = await select({
+  message: 'Pick an option',
+  choices: ['alpha', 'beta', 'gamma'],
+  theme: {
+    style: {
+      // Return an empty string to hide the help tip entirely
+      help: () => '',
+    },
+  },
+});
+```
+
+## Building a custom prompt with theming support
+
+When creating your own prompts with `@inquirer/core`, use `makeTheme` to merge user overrides with defaults:
+
+```ts
+import { createPrompt, usePrefix, makeTheme, type Theme } from '@inquirer/core';
+import type { PartialDeep } from '@inquirer/type';
+
+type PromptConfig = {
+  message: string;
+  theme?: PartialDeep<Theme>;
+};
+
+export default createPrompt<string, PromptConfig>((config, done) => {
+  const theme = makeTheme(config.theme);
+  const prefix = usePrefix({ status: 'idle', theme });
+
+  return `${prefix} ${theme.style.message(config.message, 'idle')}`;
+});
+```

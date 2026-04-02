@@ -1,0 +1,332 @@
+---
+title: "Hooks"
+description: "React-inspired hooks for state, keypresses, effects, and rendering in custom prompts."
+---
+
+Hooks are the primary way to manage state and side effects inside a `createPrompt` render function. The API mirrors React's hook conventions—if you've used React hooks, these will feel familiar.
+
+<Note>
+  Hooks must be called at the top level of the render function, not inside conditionals or loops.
+</Note>
+
+---
+
+## useState
+
+Declares a state variable that triggers a re-render whenever it changes.
+
+```ts
+function useState<Value>(
+  defaultValue: Value | (() => Value)
+): [Value, (newValue: Value) => void]
+```
+
+<ParamField path="defaultValue" type="Value | () => Value" required>
+  The initial value, or a function that returns it. The initializer function is only called once.
+</ParamField>
+
+Returns a tuple of `[currentValue, setter]`. Calling the setter with a new value schedules a re-render with the updated state.
+
+```ts
+import { createPrompt, useState } from '@inquirer/core';
+
+const select = createPrompt((config, done) => {
+  const [index, setIndex] = useState(0);
+
+  // index holds the current value; setIndex updates it
+  return `Active index: ${index}`;
+});
+```
+
+---
+
+## useKeypress
+
+Registers a handler that fires on every keypress event while the prompt is active.
+
+```ts
+function useKeypress(
+  handler: (event: KeypressEvent, rl: InquirerReadline) => void | Promise<void>
+): void
+```
+
+<ParamField path="handler" type="(event: KeypressEvent, rl: InquirerReadline) => void | Promise<void>" required>
+  Called on every keypress. Receives the key event and the active readline instance.
+</ParamField>
+
+The `KeypressEvent` type has the shape:
+
+```ts
+type KeypressEvent = {
+  name: string;   // e.g. 'enter', 'backspace', 'up', 'a', …
+  ctrl: boolean;
+  shift: boolean;
+};
+```
+
+The `rl` (readline) instance provides `rl.line`, which holds the current line buffer—useful for reading raw text input.
+
+**Detecting Enter and reading input:**
+
+```ts
+import { createPrompt, useState, useKeypress } from '@inquirer/core';
+
+const input = createPrompt((config, done) => {
+  const [value, setValue] = useState('');
+
+  useKeypress((key, rl) => {
+    if (key.name === 'enter') {
+      done(value);
+    } else {
+      setValue(rl.line);
+    }
+  });
+
+  return `? ${config.message} ${value}`;
+});
+```
+
+<Tip>
+  Use the [key utility functions](/core/key-utilities) (`isEnterKey`, `isUpKey`, etc.) instead of comparing `key.name` directly—they handle edge cases and alternate keybindings automatically.
+</Tip>
+
+---
+
+## useRef
+
+Holds a mutable value that does **not** trigger a re-render when changed. This is the escape hatch for values that are needed across renders but shouldn't cause the prompt to re-draw.
+
+```ts
+function useRef<Value>(val: Value): { current: Value }
+function useRef<Value>(val?: Value): { current: Value | undefined }
+```
+
+<ParamField path="val" type="Value">
+  The initial value stored in `ref.current`.
+</ParamField>
+
+Returns an object `{ current: Value }`. Mutate `ref.current` directly.
+
+**Storing a timeout ID:**
+
+```ts
+import { createPrompt, useRef, useEffect } from '@inquirer/core';
+
+const prompt = createPrompt((config, done) => {
+  const timeout = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    timeout.current = setTimeout(() => done('timed out'), 5000);
+    return () => {
+      if (timeout.current) clearTimeout(timeout.current);
+    };
+  }, []);
+
+  return '? Waiting…';
+});
+```
+
+---
+
+## useEffect
+
+Connects the prompt to an external system. The callback runs after the render whenever its dependencies change. Return a cleanup function to disconnect when dependencies change or the prompt closes.
+
+```ts
+function useEffect(
+  callback: (rl: InquirerReadline) => void | (() => void),
+  deps: ReadonlyArray<unknown>
+): void
+```
+
+<ParamField path="callback" type="(rl: InquirerReadline) => void | (() => void)" required>
+  Runs after render when dependencies change. Return a function to clean up (called before the next run or on prompt close).
+</ParamField>
+
+<ParamField path="deps" type="ReadonlyArray<unknown>" required>
+  Dependency array. The effect re-runs when any value in this array changes (compared with `Object.is`). Pass `[]` to run only once.
+</ParamField>
+
+**Connecting to an external resource:**
+
+```ts
+import { createPrompt, useEffect } from '@inquirer/core';
+
+const chat = createPrompt((config, done) => {
+  useEffect(() => {
+    const connection = createConnection(config.roomId);
+    connection.connect();
+    return () => connection.disconnect();
+  }, [config.roomId]);
+
+  return '? Listening…';
+});
+```
+
+---
+
+## useMemo
+
+Caches the result of an expensive calculation. The cached value is only recomputed when the dependencies change.
+
+```ts
+function useMemo<Value>(
+  fn: () => Value,
+  dependencies: ReadonlyArray<unknown>
+): Value
+```
+
+<ParamField path="fn" type="() => Value" required>
+  The function to compute the value. Only called when dependencies change.
+</ParamField>
+
+<ParamField path="dependencies" type="ReadonlyArray<unknown>" required>
+  Array of values the computation depends on. Compared with strict equality (`!==`).
+</ParamField>
+
+Returns the cached (or freshly computed) value.
+
+```ts
+import { createPrompt, useState, useMemo } from '@inquirer/core';
+
+const todoSelect = createPrompt((config, done) => {
+  const [tab, setTab] = useState('all');
+
+  const visibleTodos = useMemo(
+    () => filterTodos(config.todos, tab),
+    [config.todos, tab],
+  );
+
+  return `Showing ${visibleTodos.length} items`;
+});
+```
+
+---
+
+## usePrefix
+
+A built-in rendering hook that returns the prompt prefix string. It automatically displays a loading spinner (with a 300 ms delay to avoid flickering) when `status` is `'loading'`, and switches to a colored checkmark or question mark for other statuses.
+
+```ts
+function usePrefix({
+  status?: Status;
+  theme?: Theme;
+}): string
+```
+
+<ParamField path="status" type="Status" default="'idle'">
+  The current prompt status. Accepts `'idle'`, `'loading'`, `'done'`, or any custom string.
+</ParamField>
+
+<ParamField path="theme" type="Theme">
+  Optional theme object. When omitted the default Inquirer theme is used.
+</ParamField>
+
+Returns a styled prefix string.
+
+**Default prefix values:**
+
+| Status | Output |
+|--------|--------|
+| `'idle'` | Blue `?` |
+| `'done'` | Green `✔` |
+| `'loading'` | Animated braille spinner |
+
+```ts
+import { createPrompt, useState, usePrefix, type Status } from '@inquirer/core';
+
+const prompt = createPrompt((config, done) => {
+  const [status, setStatus] = useState<Status>('idle');
+  const prefix = usePrefix({ status });
+
+  return `${prefix} ${config.message}`;
+});
+```
+
+---
+
+## usePagination
+
+Paginates a list of items for display, rendering only the slice that fits within `pageSize` lines. Used internally by `@inquirer/select` and `@inquirer/checkbox`.
+
+```ts
+function usePagination<T>({
+  items,
+  active,
+  renderItem,
+  pageSize,
+  loop,
+}: {
+  items: ReadonlyArray<T>;
+  active: number;
+  renderItem: (layout: { item: T; index: number; isActive: boolean }) => string;
+  pageSize: number;
+  loop?: boolean;
+}): string
+```
+
+<ParamField path="items" type="ReadonlyArray<T>" required>
+  The full list of items to paginate.
+</ParamField>
+
+<ParamField path="active" type="number" required>
+  Index of the currently highlighted item.
+</ParamField>
+
+<ParamField path="renderItem" type="(layout: { item: T; index: number; isActive: boolean }) => string" required>
+  Called for each item that needs to be rendered. Return the line string for that item.
+</ParamField>
+
+<ParamField path="pageSize" type="number" required>
+  Maximum number of lines to render at once.
+</ParamField>
+
+<ParamField path="loop" type="boolean" default="true">
+  When `true`, the list wraps around at both ends. When `false`, navigation stops at the boundaries.
+</ParamField>
+
+Returns a single string of newline-joined lines representing the visible page.
+
+```ts
+import { createPrompt, useState, useKeypress, usePagination, isUpKey, isDownKey, isEnterKey } from '@inquirer/core';
+
+export default createPrompt((config, done) => {
+  const [active, setActive] = useState(0);
+
+  const allChoices = config.choices.map((choice) => choice.name);
+
+  useKeypress((key) => {
+    if (isUpKey(key)) {
+      setActive(Math.max(0, active - 1));
+    } else if (isDownKey(key)) {
+      setActive(Math.min(allChoices.length - 1, active + 1));
+    } else if (isEnterKey(key)) {
+      done(allChoices[active]);
+    }
+  });
+
+  const page = usePagination({
+    items: allChoices,
+    active,
+    renderItem: ({ item, index, isActive }) =>
+      `${isActive ? '>' : ' '} ${index}. ${item.toString()}`,
+    pageSize: config.pageSize ?? 7,
+    loop: config.loop,
+  });
+
+  return `? ${config.message}\n${page}`;
+});
+```
+
+---
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Key utilities" icon="keyboard" href="/core/key-utilities">
+    Helper functions for detecting specific keypresses.
+  </Card>
+  <Card title="Custom Prompts Overview" icon="terminal" href="/core/overview">
+    Back to the createPrompt() concept and TypeScript generics.
+  </Card>
+</CardGroup>

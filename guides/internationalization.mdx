@@ -1,0 +1,97 @@
+---
+title: "Internationalization"
+description: "Use Inquirer prompts in languages other than English with @inquirer/i18n."
+---
+
+The `@inquirer/i18n` package is a 100% drop-in replacement for `@inquirer/prompts` with built-in localization. Swap the import and your prompts will automatically use the user's language.
+
+## Installation
+
+<CodeGroup>
+
+```sh npm
+npm install @inquirer/i18n
+```
+
+```sh yarn
+yarn add @inquirer/i18n
+```
+
+```sh pnpm
+pnpm add @inquirer/i18n
+```
+
+```sh bun
+bun add @inquirer/i18n
+```
+
+</CodeGroup>
+
+## Auto-detected locale
+
+The root import is a drop-in replacement for `@inquirer/prompts`. Locale is detected automatically at runtime — no configuration required.
+
+```js
+// Drop-in replacement — locale is auto-detected from environment variables
+import { input, select, confirm } from '@inquirer/i18n';
+```
+
+<Note>
+  Locale is resolved by reading the following environment variables in order: `LANGUAGE`, `LC_ALL`, `LC_MESSAGES`, `LANG`. If none of them contain a supported locale, the `Intl` API is consulted for Windows compatibility. English is used as the final fallback.
+</Note>
+
+## Supported locales
+
+| Import path | Language |
+| --- | --- |
+| `@inquirer/i18n` _(auto)_ | Auto-detected |
+| `@inquirer/i18n/en` | English (re-export of `@inquirer/prompts`) |
+| `@inquirer/i18n/fr` | French |
+| `@inquirer/i18n/es` | Spanish |
+| `@inquirer/i18n/zh` | Chinese (Simplified) |
+| `@inquirer/i18n/pt` | Portuguese |
+
+## Pinning to a specific locale
+
+Import from a sub-path to lock the language regardless of environment variables.
+
+```js
+import { input, select, confirm } from '@inquirer/i18n/fr'; // French
+import { input, select, confirm } from '@inquirer/i18n/zh'; // Chinese (Simplified)
+```
+
+## Adding a custom locale
+
+Use `createLocalizedPrompts` to define translations for a locale, then either export the prompts directly or register the locale for auto-detection with `registerLocale`.
+
+```ts
+import { createLocalizedPrompts, registerLocale } from '@inquirer/i18n';
+import type { Locale } from '@inquirer/i18n';
+
+const deLocale: Locale = {
+  confirm: { yesLabel: 'Ja', noLabel: 'Nein', hintYes: 'J/n', hintNo: 'j/N' },
+  select: { helpNavigate: 'Navigieren', helpSelect: 'Auswählen' },
+  checkbox: {
+    helpNavigate: 'Navigieren',
+    helpSelect: 'Auswählen',
+    helpSubmit: 'Bestätigen',
+    helpAll: 'Alle',
+    helpInvert: 'Umkehren',
+  },
+  search: { helpNavigate: 'Navigieren', helpSelect: 'Auswählen' },
+  editor: {
+    waitingMessage: (enterKey) => `Drücken Sie ${enterKey}, um Ihren Editor zu öffnen.`,
+  },
+  password: { maskedText: '[Eingabe verborgen]' },
+};
+
+// Option A — use directly
+export const { input, select, confirm } = createLocalizedPrompts(deLocale);
+
+// Option B — register so `@inquirer/i18n` auto-detects it when LANG=de
+registerLocale('de', createLocalizedPrompts(deLocale));
+```
+
+<Note>
+  `registerLocale` must be called before any prompt is invoked. After registration, importing from `@inquirer/i18n` will automatically pick the registered locale when the environment variable resolves to the matching language code.
+</Note>

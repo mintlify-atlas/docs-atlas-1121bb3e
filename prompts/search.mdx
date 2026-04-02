@@ -1,0 +1,215 @@
+---
+title: "Search"
+description: "An async searchable list prompt that filters choices dynamically as the user types."
+---
+
+## Installation
+
+<CodeGroup>
+
+```sh npm
+npm install @inquirer/prompts
+```
+
+```sh yarn
+yarn add @inquirer/prompts
+```
+
+</CodeGroup>
+
+To install the standalone package instead:
+
+<CodeGroup>
+
+```sh npm
+npm install @inquirer/search
+```
+
+```sh yarn
+yarn add @inquirer/search
+```
+
+</CodeGroup>
+
+## Usage
+
+```js
+import { search, Separator } from '@inquirer/prompts';
+// Or
+// import search, { Separator } from '@inquirer/search';
+
+const answer = await search({
+  message: 'Select an npm package',
+  source: async (input, { signal }) => {
+    if (!input) {
+      return [];
+    }
+
+    const response = await fetch(
+      `https://registry.npmjs.org/-/v1/search?text=${encodeURIComponent(input)}&size=20`,
+      { signal },
+    );
+    const data = await response.json();
+
+    return data.objects.map((pkg) => ({
+      name: pkg.package.name,
+      value: pkg.package.name,
+      description: pkg.package.description,
+    }));
+  },
+});
+```
+
+## Options
+
+<ParamField path="message" type="string" required>
+  The question to ask the user.
+</ParamField>
+
+<ParamField path="source" type="(term: string | void, opt: { signal: AbortSignal }) => Promise<ReadonlyArray<Choice | Separator>>" required>
+  A function that returns choices matching the current search term. Called every time the user changes the input. See [Source function](#source-function) below.
+</ParamField>
+
+<ParamField path="pageSize" type="number">
+  Number of choices visible at once before the list paginates. Defaults to `7`.
+</ParamField>
+
+<ParamField path="default" type="Value">
+  The value of the choice in front of which the cursor initially appears.
+</ParamField>
+
+<ParamField path="validate" type="(value: Value) => boolean | string | Promise<boolean | string>">
+  Called on submit. Return `true` to accept. Return a string to show it as an error message. See [Validation and autocomplete](#validation-and-autocomplete) for special behavior when `validate` is used alongside search.
+</ParamField>
+
+<ParamField path="theme" type="Theme">
+  Customize the look of the prompt. See [Theming](#theming).
+</ParamField>
+
+## Source function
+
+The full signature of `source` is:
+
+```ts
+function source(
+  term: string | void,
+  opt: { signal: AbortSignal },
+): Promise<ReadonlyArray<Choice<Value> | Separator>>;
+```
+
+When `term` is `undefined` the input is empty. You can return default choices or an empty array.
+
+The `AbortSignal` is passed so you can cancel in-flight network requests when the search term changes before the previous call resolves.
+
+`Separator` objects can be included in the returned array to organize results into labeled groups.
+
+## Choice object
+
+```ts
+type Choice<Value> = {
+  value: Value;
+  name?: string;
+  description?: string;
+  short?: string;
+  disabled?: boolean | string;
+};
+```
+
+<ResponseField name="value" type="Value" required>
+  The value returned by `await search()` when this choice is selected.
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  The label displayed in the list. Defaults to the stringified `value`.
+</ResponseField>
+
+<ResponseField name="description" type="string">
+  A longer description shown below the list when the cursor lands on this choice.
+</ResponseField>
+
+<ResponseField name="short" type="string">
+  The label rendered next to the question after the prompt is submitted. Defaults to `name`.
+</ResponseField>
+
+<ResponseField name="disabled" type="boolean | string">
+  Prevents the choice from being selected. Pass a string to show a custom reason.
+</ResponseField>
+
+## Validation and autocomplete
+
+`validate` interacts with the autocomplete feature in a special way. When a submitted value fails validation, the prompt compares it to the current search term:
+
+- If they match, the error is displayed.
+- If they differ, the search term is autocompleted to match the submitted value, triggering a new `source` call.
+
+This lets you build progressive autocomplete flows where the user narrows results step by step. Pressing `Tab` also triggers the same autocomplete behavior.
+
+## Theming
+
+Pass a partial `theme` object to override specific tokens. Unspecified keys fall back to the defaults.
+
+```ts
+type Theme = {
+  prefix: string | { idle: string; done: string };
+  spinner: {
+    interval: number;
+    frames: string[];
+  };
+  style: {
+    answer: (text: string) => string;
+    message: (text: string, status: 'idle' | 'done' | 'loading') => string;
+    error: (text: string) => string;
+    help: (text: string) => string;
+    highlight: (text: string) => string;
+    description: (text: string) => string;
+    disabled: (text: string) => string;
+    searchTerm: (text: string) => string;
+    keysHelpTip: (keys: [key: string, action: string][]) => string | undefined;
+  };
+  icon: {
+    cursor: string;
+  };
+};
+```
+
+### `theme.style.keysHelpTip`
+
+Customize or localize the keyboard shortcuts hint. Return `undefined` to hide it entirely.
+
+```js
+theme: {
+  style: {
+    keysHelpTip: (keys) =>
+      keys.map(([key, action]) => `${key}: ${action}`).join(' | '),
+  },
+}
+```
+
+## Recipes
+
+### Debounce search
+
+Wrap `source` in a short delay to avoid firing a network request on every keystroke. Check the `AbortSignal` after the delay to bail out when the user has already typed ahead.
+
+```js
+import { setTimeout } from 'node:timers/promises';
+import { search } from '@inquirer/prompts';
+
+const answer = await search({
+  message: 'Select an npm package',
+  source: async (input, { signal }) => {
+    await setTimeout(300);
+    if (signal.aborted) return [];
+
+    const response = await fetch(
+      `https://registry.npmjs.org/-/v1/search?text=${encodeURIComponent(input ?? '')}&size=20`,
+      { signal },
+    );
+    const data = await response.json();
+    return data.objects.map((pkg) => ({
+      name: pkg.package.name,
+      value: pkg.package.name,
+    }));
+  },
+});
+```

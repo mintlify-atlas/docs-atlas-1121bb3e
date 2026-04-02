@@ -1,0 +1,108 @@
+---
+title: "Key Utilities"
+description: "Helper functions for detecting keypresses in custom Inquirer prompts."
+---
+
+`@inquirer/core` exports a set of utility functions that take a `KeypressEvent` object and return a boolean. Use these inside `useKeypress` handlers to cleanly branch on common keys without writing `key.name === '...'` checks manually.
+
+## Installation
+
+```bash
+npm install @inquirer/core
+```
+
+## KeypressEvent type
+
+```ts
+type KeypressEvent = {
+  name: string;  // e.g. 'enter', 'backspace', 'up', 'a', …
+  ctrl: boolean;
+  shift: boolean;
+};
+```
+
+## Utility functions
+
+<ParamField path="isEnterKey(key)" type="(key: KeypressEvent) => boolean">
+  Returns `true` when the Enter or Return key is pressed.
+</ParamField>
+
+<ParamField path="isBackspaceKey(key)" type="(key: KeypressEvent) => boolean">
+  Returns `true` when the Backspace key is pressed.
+</ParamField>
+
+<ParamField path="isSpaceKey(key)" type="(key: KeypressEvent) => boolean">
+  Returns `true` when the Space bar is pressed.
+</ParamField>
+
+<ParamField path="isTabKey(key)" type="(key: KeypressEvent) => boolean">
+  Returns `true` when the Tab key is pressed.
+</ParamField>
+
+<ParamField path="isUpKey(key, keybindings?)" type="(key: KeypressEvent, keybindings?: ReadonlyArray<'vim' | 'emacs'>) => boolean">
+  Returns `true` for the Up arrow key. Pass `['vim']` to also match `k`, or `['emacs']` to also match `ctrl+p`.
+</ParamField>
+
+<ParamField path="isDownKey(key, keybindings?)" type="(key: KeypressEvent, keybindings?: ReadonlyArray<'vim' | 'emacs'>) => boolean">
+  Returns `true` for the Down arrow key. Pass `['vim']` to also match `j`, or `['emacs']` to also match `ctrl+n`.
+</ParamField>
+
+<ParamField path="isNumberKey(key)" type="(key: KeypressEvent) => boolean">
+  Returns `true` when any digit key (0–9) is pressed.
+</ParamField>
+
+<ParamField path="isShiftKey(key)" type="(key: KeypressEvent) => boolean">
+  Returns `true` when the Shift modifier is active on the keypress.
+</ParamField>
+
+## Example
+
+```ts
+import {
+  createPrompt,
+  useKeypress,
+  useState,
+  isEnterKey,
+  isUpKey,
+  isDownKey,
+  isNumberKey,
+} from '@inquirer/core';
+
+const menu = createPrompt<number, { choices: string[] }>((config, done) => {
+  const [active, setActive] = useState(0);
+
+  useKeypress((key) => {
+    if (isEnterKey(key)) {
+      done(active);
+    } else if (isUpKey(key, ['vim', 'emacs'])) {
+      setActive((prev) => Math.max(0, prev - 1));
+    } else if (isDownKey(key, ['vim', 'emacs'])) {
+      setActive((prev) => Math.min(config.choices.length - 1, prev + 1));
+    } else if (isNumberKey(key)) {
+      const index = Number(key.name) - 1;
+      if (index >= 0 && index < config.choices.length) {
+        setActive(index);
+      }
+    }
+  });
+
+  const lines = config.choices.map((choice, i) =>
+    `${i === active ? '>' : ' '} ${i + 1}. ${choice}`
+  );
+
+  return lines.join('\n');
+});
+```
+
+<Tip>
+  Pass `['vim']`, `['emacs']`, or `['vim', 'emacs']` as the second argument to `isUpKey` and `isDownKey` to support alternate navigation keybindings in your custom prompt.
+</Tip>
+
+<CardGroup cols={2}>
+  <Card title="Hooks" icon="anchor" href="/core/hooks">
+    Learn about useState, useKeypress, useEffect, and other hooks.
+  </Card>
+  <Card title="Core Overview" icon="puzzle-piece" href="/core/overview">
+    Get started building custom prompts with createPrompt.
+  </Card>
+</CardGroup>
